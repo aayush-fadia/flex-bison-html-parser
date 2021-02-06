@@ -1,0 +1,8 @@
+html
+html.l
+html.tab.c
+html.tab.h
+lex.yy.c
+html.output
+.vscode
+.idea
