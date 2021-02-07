@@ -7,7 +7,7 @@ lex.yy.c: html.l html.tab.h
 	flex -d html.l
 
 html: lex.yy.c html.tab.c html.tab.h
-	gcc -o html html.tab.c lex.yy.c
+	gcc -o html html.tab.c lex.yy.c tree.c
 
 clean:
-	rm html html.tab.c lex.yy.c html.tab.h html.output
+	rm -rf html html.tab.c lex.yy.c html.tab.h html.output

@@ -1,46 +1,206 @@
-%{
-
-#include <stdio.h>
+%code requires{
 #include <stdlib.h>
+#include <string.h>
 #include "tree.h"
+}
+%{
+#include <stdio.h>
 extern int yylex();
 extern int yyparse();
 extern FILE* yyin;
+#include "tree.h"
 
-void yyerror(const char* s);
+void yyerror(node** nodeDest, const char* s);
 %}
-
-%token C HO HC TO TC BO BC 
-%start R
-
+%define parse.error detailed
+%parse-param {node** nodeDest}
+%union{
+	node* treeNode;
+	char* txt;
+	child* nodeList;
+}
+%token<treeNode> C
+%token<txt> AO
+%token HO HC TO TC BO BC PO PC H1O H1C AC ULO ULC LIO LIC
+%start I
+%type<treeNode> R H T B I CNT H1 P A SC UL LSTI
+%type<nodeList> CNTM SCM LST
 %%
-
-R				: H B
-				| H
-				| B
-				|
+I				: R				{
+								*nodeDest = $1;
+								}
 				;
-H				: HO T HC
-				| HO HC
+R				: H B			{
+								//printf("Making Root Node with Body and Head\n");
+								node* rootNode = makeNode("root", "", "");
+								attachNode(rootNode, $1);
+								attachNode(rootNode, $2);
+								$$ = rootNode;
+								}
+				| H				{
+								//printf("Making Root Node with Head Only\n");
+								node* rootNode = makeNode("root", "", "");
+								attachNode(rootNode, $1);
+								$$ = rootNode;
+								}
+				| B				{
+								//printf("Making Root Node with Body Only\n");
+								node* rootNode = makeNode("root", "", "");
+								attachNode(rootNode, $1);
+								$$ = rootNode;
+								}
 				;
-T				: TO C TC
+H				: HO T HC		{
+								//printf("Passing Up Head Node %s %s\n", $2->type, $2->value);
+								node* headNode = makeNode("head", "", "");
+								attachNode(headNode, $2);
+								$$ = headNode;
+								}
+				| HO HC			{
+								//printf("Passing Up Empty Head Node\n");
+								node* headNode = makeNode("head", "", "");
+								$$ = headNode;
+								}
 				;
-B				: BO C BC
-				| BO BC
-
+T				: TO C TC		{
+								//printf("Passing Up Title Node %s %s\n", $2->type, $2->value);
+								node* titleNode = makeNode("title", "", "");
+								attachNode(titleNode, $2);
+								$$ = titleNode;
+								}
+				;
+B				: BO CNTM BC	{
+								// printf("Passing Up Body Node %s %s\n", $2->type, $2->value);
+								node* bodyNode = makeNode("body", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(bodyNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = bodyNode;
+								}
+				| BO BC			{
+								//printf("Passing Up Empty Body Node\n");
+								node* bodyNode = makeNode("body", "", "");
+								$$ = bodyNode;
+								}
+				;
+CNTM			: CNT			{
+								//printf("Making List of Nodes\n");
+								$$ = makeChild($1);
+								}
+				| CNT CNTM		{
+								//printf("Expanding List of Content\n");
+								child* iter = $2;
+								while(iter->next!=NULL){
+									iter=iter->next;
+								}
+								child* newChild = makeChild($1);
+								iter->next = newChild;
+								$$ = $2;
+								}
+				;
+CNT				: P
+				| H1
+				| UL
+				;
+				;
+P				: PO SCM PC		{
+								node* bodyNode = makeNode("p", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(bodyNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = bodyNode;
+								}
+				;
+H1				: H1O SCM H1C	{
+								node* bodyNode = makeNode("h1", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(bodyNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = bodyNode;
+								}
+				;
+UL				: ULO LST ULC	{
+								node* ulNode = makeNode("ul", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(ulNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = ulNode;
+								}
+				;
+LST				: LSTI			{
+								//printf("Making List of Nodes\n");
+								$$ = makeChild($1);
+								}
+				| LSTI LST		{
+								//printf("Expanding List of LI Nodes.\n");
+								child* iter = $2;
+								while(iter->next!=NULL){
+									iter=iter->next;
+								}
+								child* newChild = makeChild($1);
+								iter->next = newChild;
+								$$ = $2;
+								}
+				;
+LSTI			: LIO SC LIC	{
+								//printf("Passing Up LI Node %s %s\n", $2->type, $2->value);
+								node* liNode = makeNode("li", "", "");
+								attachNode(liNode, $2);
+								$$ = liNode;
+								}
+				;
+SCM				: SC			{
+								//printf("Making List of Stylized Content\n");
+								$$ = makeChild($1);
+								}
+				| SC SCM		{
+								//printf("Expanding List of Stylized Content\n");
+								child* iter = $2;
+								while(iter->next!=NULL){
+									iter=iter->next;
+								}
+								child* newChild = makeChild($1);
+								iter->next = newChild;
+								$$ = $2;
+								}
+				;
+SC				: C
+				| A
+				;
+A				: AO C AC		{
+								//printf("Making A Node.\n");
+								node* aNode = makeNode("a", $1, "");
+								attachNode(aNode, $2);
+								$$ = aNode;
+								}
+				;	
 %%
 
 int main() {
 	yyin = stdin;
-
-	do {
-		yyparse();
-	} while(!feof(yyin));
-
+	node* nodeDest;
+	yyparse(&nodeDest);
+	printf("YYParse Called!\n");
+	printBreadthFirst(nodeDest);
+	/* do {
+		yyparse(&nodeDest);
+	} while(!feof(yyin)); */
 	return 0;
 }
 
-void yyerror(const char* s) {
+void yyerror(node** nodeDest, const char* s) {
 	fprintf(stderr, "Parse error: %s\n", s);
 	exit(1);
 }

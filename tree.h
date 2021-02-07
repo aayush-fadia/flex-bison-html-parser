@@ -6,9 +6,9 @@
 
 struct childrenLLNode;
 typedef struct treeNode {
-    char* type;
-    char* property;
-    char* value;
+    char type[500];
+    char property[500];
+    char value[500];
     struct childrenLLNode* children;
     struct treeNode* parent;
 } node;

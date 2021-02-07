@@ -1,5 +1,7 @@
 # HTML as Tree Parser
-### Written in flex/bison.
-Compile using the `Makefile` 
 
-    $ make
+### Written in flex/bison.
+
+Compile using the `Makefile`
+
+    make
