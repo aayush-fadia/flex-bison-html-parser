@@ -4,6 +4,10 @@
 
 * The HTML Code that was  run through the parser
 * The Debug Output of the entire parser,m that clearly shows the matched rules, and the Breadth First traversal of the Parsed Tree at the end.
+The tree is printed in the format:
+tag{property}(content)
+
+for all tags, content is present only in the base level leaves, like noral for normal text, and for <b>, <strong> etc. Properties are present where tags have arguments, like the href for a and the size for font.
 
 ## Case 1: Valid HTML Code
 
@@ -254,4 +258,123 @@ HEADLINE 1, 1
 Parse error: Opening and Closing Tag Mismatch
 ```
 
-In this case, the HTML coe had non matching tags, so the Parser could not generate a tree. Instead, a useful error message was displayed, stating that the tags were mismatched, with a clear indication of which one, right above.
+In this case, the HTML code had non matching tags, so the Parser could not generate a tree. Instead, a useful error message was displayed, stating that the tags were mismatched, with a clear indication of which one, right above.
+
+## Case 3: Mismatched Headers
+
+HTML:
+
+```html
+<html>
+
+<head>
+    <title> I'm Title!! </title>
+</head>
+
+<body>
+    <h1> Hi There! I am Heading! </h2>
+    <p> Hi there! I am Paragraph! with some <b> Bold </strong> text and a <a href="www.google.com"> hyperlink. </a> </p>
+    <p>
+        Another Paragraph with <font size=10> BIG TEXT </font>
+    </p>
+    <ul>
+        <li> List Item 1</li>
+        <li> List Item 2</li>
+    </ul>
+    <dl>
+        <dt>Coffee</dt>
+        <dd>Black hot drink</dd>
+        <dt>Milk</dt>
+        <dd>White cold drink</dd>
+    </dl>
+</body>
+
+</html>
+```
+
+Parser Output:
+
+```
+--accepting rule at line 14 ("<html>")
+--accepting rule at line 13 ("
+
+")
+--accepting rule at line 16 ("<head>")
+--accepting rule at line 13 ("
+    ")
+--accepting rule at line 20 ("<title>")
+--accepting rule at line 13 (" ")
+--accepting rule at line 79 ("I'm Title!! ")
+--accepting rule at line 21 ("</title>")
+--accepting rule at line 13 ("
+")
+--accepting rule at line 17 ("</head>")
+--accepting rule at line 13 ("
+
+")
+--accepting rule at line 18 ("<body>")
+--accepting rule at line 13 ("
+    ")
+--accepting rule at line 22 ("<h1>")
+--accepting rule at line 13 (" ")
+--accepting rule at line 79 ("Hi There! I am Heading! ")
+--accepting rule at line 30 ("</h2>")
+Parse error: Headers Mismatch
+```
+
+In this case, the HTML code had non matching tags, so the Parser could not generate a tree. Instead, a useful error message was displayed, stating that the headers were mismatched, with a clear indication of which one, right above.
+
+
+## Case 3: Malformed HTML
+
+HTML:
+
+```html
+<html>
+
+<head>
+    <title> I'm Title!! </title>
+
+<body>
+    <h1> Hi There! I am Heading! </h1>
+    <p> Hi there! I am Paragraph! with some <b> Bold </strong> text and a <a href="www.google.com"> hyperlink. </a> </p>
+    <p>
+        Another Paragraph with <font size=10> BIG TEXT </font>
+    </p>
+    <ul>
+        <li> List Item 1</li>
+        <li> List Item 2</li>
+    </ul>
+    <dl>
+        <dt>Coffee</dt>
+        <dd>Black hot drink</dd>
+        <dt>Milk</dt>
+        <dd>White cold drink</dd>
+    </dl>
+</body>
+
+</html>
+```
+
+Parser Output:
+
+```
+--accepting rule at line 14 ("<html>")
+--accepting rule at line 13 ("
+
+")
+--accepting rule at line 16 ("<head>")
+--accepting rule at line 13 ("
+    ")
+--accepting rule at line 20 ("<title>")
+--accepting rule at line 13 (" ")
+--accepting rule at line 79 ("I'm Title!! ")
+--accepting rule at line 21 ("</title>")
+--accepting rule at line 13 ("
+
+")
+--accepting rule at line 18 ("<body>")
+Parse error: syntax error, unexpected BO, expecting HC
+```
+
+Here the head tag was not closed, and the parser rightly prints out the error message.

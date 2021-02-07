@@ -9,7 +9,7 @@ This flex/bison code generates an HTML parser that can parse a subset of HTML in
 Compile using the `Makefile`
 
 ```bash
-make
+make clean && make all
 ```
 Then run using 
 ```bash

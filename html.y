@@ -20,12 +20,17 @@ void yyerror(node** nodeDest, const char* s);
 	child* nodeList;
 }
 %token<txt> AO C FO
-%token<txt> MTO MTC H1O H1C 
+%token<txt> MTO MTC H1O H1C
+// D-Document (html) H-Head B-Body And the rest of the names are simply tag followed by O for opening and C for close. 
+// LST type names hold collections of nodes, which they pass up to parent nodes.
 %token DO DC HO HC TO TC BO BC PO PC AC ULO ULC LIO LIC FC DTO DTC DDO DDC DLO DLC
 %start I
 %type<treeNode> R H T B I CNT H1 P A SC UL LSTI MT F DT DD DLSTI DL
 %type<nodeList> CNTM SCM LST DLST
 %%
+// The making of the tree:
+// The tree is generated bottom up, as each tag becomes the parent of the tag below it, and passes itself upwards to be parented by anpother tag.
+//Initial State, to pass param back to main.
 I				: R				{
 								*nodeDest = $1;
 								}
