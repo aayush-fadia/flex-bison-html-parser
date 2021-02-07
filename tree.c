@@ -46,7 +46,7 @@ void printBreadthFirst(node* root) {
             curNodeIter = curNodeIter->next;
             tail = tail->next;
         }
-        printf("%s(%s) ", curNode->type, curNode->value);
+        printf("%s{%s}(%s)\n", curNode->type, curNode->property, curNode->value);
         iter = iter->next;
     }
     printf("\n");

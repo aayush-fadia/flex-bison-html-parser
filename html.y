@@ -19,34 +19,34 @@ void yyerror(node** nodeDest, const char* s);
 	char txt[500];
 	child* nodeList;
 }
-%token<txt> AO C
-%token<txt> MTO MTC
-%token HO HC TO TC BO BC PO PC H1O H1C AC ULO ULC LIO LIC
+%token<txt> AO C FO
+%token<txt> MTO MTC H1O H1C 
+%token DO DC HO HC TO TC BO BC PO PC AC ULO ULC LIO LIC FC DTO DTC DDO DDC DLO DLC
 %start I
-%type<treeNode> R H T B I CNT H1 P A SC UL LSTI MT
-%type<nodeList> CNTM SCM LST
+%type<treeNode> R H T B I CNT H1 P A SC UL LSTI MT F DT DD DLSTI DL
+%type<nodeList> CNTM SCM LST DLST
 %%
 I				: R				{
 								*nodeDest = $1;
 								}
 				;
-R				: H B			{
+R				: DO H B DC			{
 								//printf("Making Root Node with Body and Head\n");
-								node* rootNode = makeNode("root", "", "");
-								attachNode(rootNode, $1);
+								node* rootNode = makeNode("html", "", "");
+								attachNode(rootNode, $3);
 								attachNode(rootNode, $2);
 								$$ = rootNode;
 								}
-				| H				{
+				| DO H DC		{
 								//printf("Making Root Node with Head Only\n");
 								node* rootNode = makeNode("root", "", "");
-								attachNode(rootNode, $1);
+								attachNode(rootNode, $2);
 								$$ = rootNode;
 								}
-				| B				{
+				| DO B DC		{
 								//printf("Making Root Node with Body Only\n");
 								node* rootNode = makeNode("root", "", "");
-								attachNode(rootNode, $1);
+								attachNode(rootNode, $2);
 								$$ = rootNode;
 								}
 				;
@@ -63,7 +63,7 @@ H				: HO T HC		{
 								}
 				;
 T				: TO C TC		{
-								node* titleNode = makeNode("title", $2, "");
+								node* titleNode = makeNode("title", "", $2);
 								$$ = titleNode;
 								}
 				;
@@ -102,6 +102,7 @@ CNTM			: CNT			{
 CNT				: P
 				| H1
 				| UL
+				| DL
 				;
 				;
 P				: PO SCM PC		{
@@ -116,7 +117,9 @@ P				: PO SCM PC		{
 								}
 				;
 H1				: H1O SCM H1C	{
-								node* bodyNode = makeNode("h1", "", "");
+								if(strcmp($1, $3) == 0){
+								printf("HEADLINE %s, %s\n", $1, $3);
+								node* bodyNode = makeNode("h", $1, "");
 								child* iter = $2;
 								while(iter!=NULL){
 									//printf("Iter! ");
@@ -124,6 +127,9 @@ H1				: H1O SCM H1C	{
 									iter = iter->next;
 								}
 								$$ = bodyNode;
+								}else{
+									yyerror(nodeDest, "Headers Mismatch");
+								}
 								}
 				;
 UL				: ULO LST ULC	{
@@ -163,6 +169,57 @@ LSTI			: LIO SCM LIC	{
 								$$ = bodyNode;
 								}
 				;
+DL				: DLO DLST DLC	{
+								node* ulNode = makeNode("ul", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(ulNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = ulNode;
+								}
+				;
+DLST			: DLSTI			{
+								//printf("Making List of Nodes\n");
+								$$ = makeChild($1);
+								}
+				| DLSTI DLST	{
+								//printf("Expanding List of LI Nodes.\n");
+								child* iter = $2;
+								while(iter->next!=NULL){
+									iter=iter->next;
+								}
+								child* newChild = makeChild($1);
+								iter->next = newChild;
+								$$ = $2;
+								}
+				;
+DLSTI			: DT 
+				| DD			
+				;
+DT				: DTO SCM DTC	{
+								node* bodyNode = makeNode("dt", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(bodyNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = bodyNode;
+								}
+				;
+DD				: DDO SCM DDC	{
+								node* bodyNode = makeNode("dd", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(bodyNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = bodyNode;
+								}
+				;
 SCM				: SC			{
 								//printf("Making List of Stylized Content\n");
 								$$ = makeChild($1);
@@ -182,11 +239,18 @@ SC				: C				{
 								$$ = makeNode("normal", "", $1);
 								}
 				| A
+				| F
 				| MT
 				;
 A				: AO C AC		{
 								//printf("Making A Node.\n");
 								node* aNode = makeNode("a", $1, $2);
+								$$ = aNode;
+								}
+				;
+F				: FO C FC		{
+								//printf("Making A Node.\n");
+								node* aNode = makeNode("font", $1, $2);
 								$$ = aNode;
 								}
 				;	
