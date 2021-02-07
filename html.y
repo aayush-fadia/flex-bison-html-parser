@@ -16,14 +16,14 @@ void yyerror(node** nodeDest, const char* s);
 %parse-param {node** nodeDest}
 %union{
 	node* treeNode;
-	char* txt;
+	char txt[500];
 	child* nodeList;
 }
-%token<treeNode> C
-%token<txt> AO
+%token<txt> AO C
+%token<txt> MTO MTC
 %token HO HC TO TC BO BC PO PC H1O H1C AC ULO ULC LIO LIC
 %start I
-%type<treeNode> R H T B I CNT H1 P A SC UL LSTI
+%type<treeNode> R H T B I CNT H1 P A SC UL LSTI MT
 %type<nodeList> CNTM SCM LST
 %%
 I				: R				{
@@ -63,9 +63,7 @@ H				: HO T HC		{
 								}
 				;
 T				: TO C TC		{
-								//printf("Passing Up Title Node %s %s\n", $2->type, $2->value);
-								node* titleNode = makeNode("title", "", "");
-								attachNode(titleNode, $2);
+								node* titleNode = makeNode("title", $2, "");
 								$$ = titleNode;
 								}
 				;
@@ -154,11 +152,15 @@ LST				: LSTI			{
 								$$ = $2;
 								}
 				;
-LSTI			: LIO SC LIC	{
-								//printf("Passing Up LI Node %s %s\n", $2->type, $2->value);
-								node* liNode = makeNode("li", "", "");
-								attachNode(liNode, $2);
-								$$ = liNode;
+LSTI			: LIO SCM LIC	{
+								node* bodyNode = makeNode("li", "", "");
+								child* iter = $2;
+								while(iter!=NULL){
+									//printf("Iter! ");
+									attachNode(bodyNode, iter->value);
+									iter = iter->next;
+								}
+								$$ = bodyNode;
 								}
 				;
 SCM				: SC			{
@@ -176,23 +178,33 @@ SCM				: SC			{
 								$$ = $2;
 								}
 				;
-SC				: C
+SC				: C				{
+								$$ = makeNode("normal", "", $1);
+								}
 				| A
+				| MT
 				;
 A				: AO C AC		{
 								//printf("Making A Node.\n");
-								node* aNode = makeNode("a", $1, "");
-								attachNode(aNode, $2);
+								node* aNode = makeNode("a", $1, $2);
 								$$ = aNode;
 								}
 				;	
+MT				: MTO C MTC		{
+								if(strcmp($1 + 1, $3 + 2) == 0){
+									node* mtNode = makeNode($1, "", $2);
+									$$ = mtNode;
+								}else{
+									yyerror(nodeDest, "Opening and Closing Tag Mismatch");
+								}
+								}
 %%
 
 int main() {
 	yyin = stdin;
 	node* nodeDest;
 	yyparse(&nodeDest);
-	printf("YYParse Called!\n");
+	/* printf("YYParse Called!\n"); */
 	printBreadthFirst(nodeDest);
 	/* do {
 		yyparse(&nodeDest);

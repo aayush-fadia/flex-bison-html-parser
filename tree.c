@@ -20,15 +20,18 @@ child* makeChild(node* value) {
 void attachNode(node* parent, node* childNode) {
     child* newChild = makeChild(childNode);
     childNode->parent = parent;
-    if (parent->children == NULL) {
-        parent->children = newChild;
-    } else {
-        child* iter = parent->children;
-        while (iter->next != NULL) {
-            iter = iter->next;
-        }
-        iter->next = newChild;
-    }
+    newChild->next = parent->children;
+    parent->children = newChild;
+    // child* prevChildren = parent->children;
+    // if (parent->children == NULL) {
+    //     parent->children = newChild;
+    // } else {
+    //     child* iter = parent->children;
+    //     while (iter->next != NULL) {
+    //         iter = iter->next;
+    //     }
+    //     iter->next = newChild;
+    // }
 }
 
 void printBreadthFirst(node* root) {
